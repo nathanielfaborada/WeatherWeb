@@ -8,7 +8,7 @@ function saveWeatherToCache(key, data) {
 }
 
 // Load from localStorage (with expiry check, default 1 hour)
-function loadWeatherFromCache(key, expiryMs = 3600000) {
+function loadWeatherFromCache(key, expiryMs = 3600000) {       
   const cached = localStorage.getItem(key);
   if (!cached) return null;
 
@@ -24,12 +24,13 @@ function loadWeatherFromCache(key, expiryMs = 3600000) {
 }
 
 // Fetch weather by coordinates
+// Fetch weather by coordinates
 async function getWeatherByCoords(latitude, longitude, locationName = "Your Location") {
   const cacheKey = `weather_${latitude}_${longitude}`;
   let data = loadWeatherFromCache(cacheKey);
 
   if (!data) {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
     const response = await fetch(url);
     data = await response.json();
 
@@ -40,25 +41,41 @@ async function getWeatherByCoords(latitude, longitude, locationName = "Your Loca
     date,
     tempMax: data.daily.temperature_2m_max[i],
     tempMin: data.daily.temperature_2m_min[i],
+    rainProbability: data.daily.precipitation_probability_max[i] // % chance of rain
   }));
 
   // Today’s weather
   const today = forecast[0];
   document.getElementById("todayWeather").innerHTML = `
-      <p class="font-semibold text-lg">${today.date}</p>
-      <p class="text-pink-400">🌡 Max: ${today.tempMax}°C</p>
-      <p class="text-cyan-400">❄ Min: ${today.tempMin}°C</p>
+    <p class="font-semibold text-lg">${today.date}</p>
+    <p class="text-pink-400">🌡 Max: ${today.tempMax}°C</p>
+    <p class="text-cyan-400">❄ Min: ${today.tempMin}°C</p>
+
+    <p class="text-white text-sm mt-2">💧 Rain Probability</p>
+    <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+      <div class="bg-cyan-400 h-4" style="width: ${today.rainProbability}%;"></div>
+    </div>
+    <p class="text-xs text-gray-300 mt-1">${today.rainProbability}% chance of rain</p>
   `;
 
   // Forecast cards (from day 2 onwards)
   let html = '';
   forecast.slice(1).forEach(day => {
     html += `
-      <div class="retro-border bg-gray-800 p-4 rounded-md flex-none min-w-[150px] text-center neon-glow">
-        <p class="font-semibold">${day.date}</p>
-        <p class="text-pink-400">🌡 Max: ${day.tempMax}°C</p>
-        <p class="text-cyan-400">❄ Min: ${day.tempMin}°C</p>
-      </div>
+      <div class="retro-border bg-gray-800 p-4 rounded-2xl shadow-lg flex-none 
+            min-w-[150px] md:min-w-[180px] text-center neon-glow 
+            snap-center transition transform hover:scale-105">
+  <p class="font-semibold">${day.date}</p>
+  <p class="text-pink-400">🌡 Max: ${day.tempMax}°C</p>
+  <p class="text-cyan-400">❄ Min: ${day.tempMin}°C</p>
+  
+  <!-- Rain probability bar -->
+  <div class="w-full bg-gray-700 rounded-full h-2 mt-2 overflow-hidden">
+    <div class="bg-cyan-400 h-2" style="width: ${day.rainProbability}%;"></div>
+  </div>
+  <p class="text-xs text-gray-300 mt-1">${day.rainProbability}% rain</p>
+</div>
+
     `;
   });
 

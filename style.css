@@ -192,22 +192,5 @@
     
 
 
-.parent {
-  display: flex;               
-  justify-content: center;     /* centers horizontally */
-  align-items: center;         /* centers vertically */
-  
-  gap: 20px;                    /* just for visibility */
-}
 
-.child-1 {
-  width: 900px;
-  height: 250px;
-  
-}
 
-.child-2 {
-  
-  height: 250px;
-  
-}
