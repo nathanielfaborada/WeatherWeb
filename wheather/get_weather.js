@@ -1,3 +1,4 @@
+
 // Save to localStorage
 function saveWeatherToCache(key, data) {
   const cacheData = {
@@ -8,7 +9,7 @@ function saveWeatherToCache(key, data) {
 }
 
 // Load from localStorage (with expiry check, default 1 hour)
-function loadWeatherFromCache(key, expiryMs = 3600000) {       
+function loadWeatherFromCache(key, expiryMs = 3600000) {
   const cached = localStorage.getItem(key);
   if (!cached) return null;
 
@@ -23,7 +24,31 @@ function loadWeatherFromCache(key, expiryMs = 3600000) {
   return parsed.data;
 }
 
-// Fetch weather by coordinates
+// --- Weather Alert Rules ---
+function generateWeatherAlerts(today) {
+  let alerts = [];
+
+  if (today.rainProbability >= 80) {
+    alerts.push("⚠️ High chance of rain today. Bring an umbrella!");
+  } else if (today.rainProbability >= 50) {
+    alerts.push("🌦️ Possible rain showers, stay prepared.");
+  }
+
+  if (today.tempMax >= 35) {
+    alerts.push("🔥 Heat alert: Stay hydrated and avoid long sun exposure.");
+  }
+
+  if (today.tempMin <= 10) {
+    alerts.push("❄️ Cold weather alert: Dress warmly.");
+  }
+
+  if (alerts.length === 0) {
+    alerts.push("✅ No severe weather alerts today.");
+  }
+
+  return alerts;
+}
+
 // Fetch weather by coordinates
 async function getWeatherByCoords(latitude, longitude, locationName = "Your Location") {
   const cacheKey = `weather_${latitude}_${longitude}`;
@@ -46,16 +71,37 @@ async function getWeatherByCoords(latitude, longitude, locationName = "Your Loca
 
   // Today’s weather
   const today = forecast[0];
-  document.getElementById("todayWeather").innerHTML = `
-    <p class="font-semibold text-lg">${today.date}</p>
-    <p class="text-pink-400">🌡 Max: ${today.tempMax}°C</p>
-    <p class="text-cyan-400">❄ Min: ${today.tempMin}°C</p>
+  const alerts = generateWeatherAlerts(today);
 
-    <p class="text-white text-sm mt-2">💧 Rain Probability</p>
-    <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
-      <div class="bg-cyan-400 h-4" style="width: ${today.rainProbability}%;"></div>
+  document.getElementById("todayWeather").innerHTML = `
+
+    <div class="flex flex-col md:flex-row gap-6 w-full max-w-6xl mx-auto p-4">
+  
+      <!-- Left: Weather details -->
+      <div class="flex-1 bg-gray-800 rounded-xl p-4 shadow-lg">
+        <p class="font-semibold text-lg mb-2">📅 ${today.date}</p>
+        <p class="text-pink-400">🌡 Max: ${today.tempMax}°C</p>
+        <p class="text-cyan-400">❄ Min: ${today.tempMin}°C</p>
+
+        <p class="text-white text-sm mt-3">💧 Rain Probability</p>
+        <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+          <div class="bg-gradient-to-r from-blue-400 to-cyan-400 h-4" 
+              style="width: ${today.rainProbability}%;"></div>
+        </div>
+        <p class="text-xs text-gray-300 mt-1">${today.rainProbability}% chance of rain</p>
+      </div>
+
+      <!-- Right: Weather alerts -->
+      <div class="flex-1 bg-pink-900 rounded-xl p-4 shadow-lg">
+        <p class="font-bold mb-2">⚠️ Weather Alerts:</p>
+        <ul class="list-disc list-inside text-sm space-y-1">
+          ${alerts.map(a => `<li>${a}</li>`).join("")}
+        </ul>
+      </div>
+
     </div>
-    <p class="text-xs text-gray-300 mt-1">${today.rainProbability}% chance of rain</p>
+
+
   `;
 
   // Forecast cards (from day 2 onwards)
@@ -65,17 +111,16 @@ async function getWeatherByCoords(latitude, longitude, locationName = "Your Loca
       <div class="retro-border bg-gray-800 p-4 rounded-2xl shadow-lg flex-none 
             min-w-[150px] md:min-w-[180px] text-center neon-glow 
             snap-center transition transform hover:scale-105">
-  <p class="font-semibold">${day.date}</p>
-  <p class="text-pink-400">🌡 Max: ${day.tempMax}°C</p>
-  <p class="text-cyan-400">❄ Min: ${day.tempMin}°C</p>
-  
-  <!-- Rain probability bar -->
-  <div class="w-full bg-gray-700 rounded-full h-2 mt-2 overflow-hidden">
-    <div class="bg-cyan-400 h-2" style="width: ${day.rainProbability}%;"></div>
-  </div>
-  <p class="text-xs text-gray-300 mt-1">${day.rainProbability}% rain</p>
-</div>
-
+        <p class="font-semibold">${day.date}</p>
+        <p class="text-pink-400">🌡 Max: ${day.tempMax}°C</p>
+        <p class="text-cyan-400">❄ Min: ${day.tempMin}°C</p>
+        
+        <!-- Rain probability bar -->
+        <div class="w-full bg-gray-700 rounded-full h-2 mt-2 overflow-hidden">
+          <div class="bg-cyan-400 h-2" style="width: ${day.rainProbability}%;"></div>
+        </div>
+        <p class="text-xs text-gray-300 mt-1">${day.rainProbability}% rain</p>
+      </div>
     `;
   });
 
@@ -140,3 +185,4 @@ function detectLocationWeather() {
 
 // Run on page load
 window.onload = detectLocationWeather;
+
